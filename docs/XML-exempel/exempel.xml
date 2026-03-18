@@ -1,0 +1,105 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:int="http://INT013.DocumentService.Schemas">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <int:CreateAFMessageDocumentRequest>
+         <!--1 or more repetitions:-->
+         <int:AFMessageDocument>
+            <int:Header>
+               <int:IdentificationNumber>199012193554</int:IdentificationNumber>
+               <int:DocumentType>AFMessage</int:DocumentType>
+               <int:SubsriberId>58EA2B5B10B44AA55234D600171B</int:SubsriberId>
+               <int:DocumentInstance>ORIGINAL</int:DocumentInstance>
+               <!--Optional:-->
+            </int:Header>
+            <int:Body>
+               <int:TransactionId>991236129</int:TransactionId>
+               <int:MessageId>800001472</int:MessageId>
+               <!--Optional:-->
+               <int:MessageIdReferenceList>
+                  <!--Zero or more repetitions:-->
+               </int:MessageIdReferenceList>
+               <int:MessageCreated>2025-12-08T09:05:00.000+01:00</int:MessageCreated>
+               <int:MessageSent>2025-12-08T09:05:00.000+01:00</int:MessageSent>
+               <int:MessageType>ALF9P1</int:MessageType>
+               <int:MessageTypeText>Inte lämnat in aktivitetsrapport i tid.</int:MessageTypeText>
+               <int:MessageDate>2025-12-08T09:05:00.000+01:00</int:MessageDate>
+               <!--Optional:-->
+               <int:MessageText>VARASIDOR TEST REQUEST</int:MessageText>
+               <!--Optional:-->
+               <int:AFCaseWorker>
+                  <!--Optional:-->
+                  <int:Firstname>Firstname</int:Firstname>
+                  <!--Optional:-->
+                  <int:Lastname>Lastname</int:Lastname>
+                  <!--Optional:-->
+                  <!--Optional:-->
+                  <int:TelephoneNumber>0735804448</int:TelephoneNumber>
+                  <int:EmailAddress>autotest@sverigesakassor.se</int:EmailAddress>
+               </int:AFCaseWorker>
+               <int:AdditionalParty>
+                  <!--Optional:-->
+                  <int:AdditionalPartyName>AdditionalPartyName</int:AdditionalPartyName>
+               </int:AdditionalParty>
+               <!--Optional:-->
+               <int:AFProgram>
+                  <int:ProgramType>ProgramType</int:ProgramType>
+                  <int:ProgramStart>2020-02-10T00:00:00.000+01:00</int:ProgramStart>
+                  <int:ProgramEnd>2020-02-10T00:00:00.000+01:00</int:ProgramEnd>
+               </int:AFProgram>
+               <int:AFPlatsbanken>
+                  <!--Zero or more repetitions:-->
+                  <int:Plats>
+                     <int:ORDER_ID>1234</int:ORDER_ID>
+                     <int:ANVISNINGSDATUM>2020-02-10</int:ANVISNINGSDATUM>
+                     <int:SVARSDATUM>2020-02-10</int:SVARSDATUM>
+                     <int:KONTAKT_TYP>Post</int:KONTAKT_TYP>
+                     <int:PLATSBANKID>1234</int:PLATSBANKID>
+                     <int:PLATSRUBRIK>platsrubrik</int:PLATSRUBRIK>
+                     <int:SSYK>ssyk</int:SSYK>
+                     <int:YRKE_ID>1234</int:YRKE_ID>
+                     <int:YRKESBENAMNING>yrkesbenamning</int:YRKESBENAMNING>
+                     <int:ERFARENHETSKRAV>true</int:ERFARENHETSKRAV>
+                     <int:ARBETSTID>Heltid</int:ARBETSTID>
+                     <int:VARAKTIGHET>Tillsvidare</int:VARAKTIGHET>
+                     <int:ARBETSGIVARNAMN>arbetsgivarnamn</int:ARBETSGIVARNAMN>
+                     <int:TELNR>0123456</int:TELNR>
+                     <int:ADRESSLAND>adressland</int:ADRESSLAND>
+                     <int:BESOKSADRESS>besoksadress</int:BESOKSADRESS>
+                     <int:UTDELNINGSADRESS>utdelningsadress</int:UTDELNINGSADRESS>
+                     <int:POSTNR>13131</int:POSTNR>
+                     <int:POSTORT>stockholm</int:POSTORT>
+                     <int:UTLANDSK_POSTADRESS>utlandsk post address</int:UTLANDSK_POSTADRESS>
+                     <int:EPOST>autotest@sverigesakassor.se</int:EPOST>
+                     <int:HEMSIDA>sverigesakassor.se</int:HEMSIDA>
+                     <int:FAXNR>0123456</int:FAXNR>
+                     <int:PLATSBESKRIVNING>platsbeskrivning</int:PLATSBESKRIVNING>
+                     <int:BEHORIG_KRAV>behorig krav</int:BEHORIG_KRAV>
+                     <int:FORDON_KRAV>fordon krav</int:FORDON_KRAV>
+                     <int:ARBETSTIDFORLAGGNING>Dagtid</int:ARBETSTIDFORLAGGNING>
+                     <int:KOMMUN>kommun</int:KOMMUN>
+                     <int:LONEFORM>Fast lön</int:LONEFORM>
+                     <int:KOLLEKTIVAVTAL>true</int:KOLLEKTIVAVTAL>
+                     <int:LONEBESKR>lonebeskr</int:LONEBESKR>
+                     <int:TILLTRADE>tilltrade</int:TILLTRADE>
+                     <int:SISTA_ANSOK_PUBLDATUM>2020-02-10</int:SISTA_ANSOK_PUBLDATUM>
+                     <int:SISTA_ANSOKNINGSSDATUM>2020-02-10</int:SISTA_ANSOKNINGSSDATUM>
+                     <int:ANSOKAN_OVRIGT>ansokan ovrigt</int:ANSOKAN_OVRIGT>
+                     <int:ANSOKAN_EPOST>autotest@sverigesakassor.se</int:ANSOKAN_EPOST>
+                     <int:REFERENSNR>referensnr</int:REFERENSNR>
+                     <int:URL_ANNONS_PLATSBANKEN>urlannonsplatsbanken</int:URL_ANNONS_PLATSBANKEN>
+                  </int:Plats>
+               </int:AFPlatsbanken>
+               <int:AFUtdrag>
+                  <int:Utdrag>
+                     <int:Utdragstyp>Aktivitetsrapport</int:Utdragstyp>
+                     <int:Utdragstext>utdragstext</int:Utdragstext>
+                     <int:Utdragsdatum>2020-02-10T00:00:00.000+01:00</int:Utdragsdatum>
+                  </int:Utdrag>
+               </int:AFUtdrag>
+               <!--Optional:-->
+            </int:Body>
+            <!--Optional:-->
+         </int:AFMessageDocument>
+      </int:CreateAFMessageDocumentRequest>
+   </soapenv:Body>
+</soapenv:Envelope>
