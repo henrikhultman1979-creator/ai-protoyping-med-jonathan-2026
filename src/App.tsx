@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { format } from "date-fns"
-import { CalendarIcon, ClipboardCopy, Download } from "lucide-react"
+import { CalendarIcon, ClipboardCopy, Download, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { sv } from "date-fns/locale"
 
 const MESSAGE_TYPES: { label: string; value: string; text: string }[] = [
   { label: "ALF43P1 / 7:2P1",   value: "ALF43P1",  text: "Inte medverkat till att upprätta en handlingsplan." },
@@ -43,33 +44,48 @@ function DatePicker({
   date: Date | undefined
   onSelect: (date: Date | undefined) => void
 }) {
+  const [inputValue, setInputValue] = useState(date ? format(date, "yyyy-MM-dd HH:mm:ss") : "")
+  const [open, setOpen] = useState(false)
+
   function handleSelect(selected: Date | undefined) {
-    if (!selected) {
-      onSelect(undefined)
-      return
+    if (!selected) return
+    const d = new Date(selected)
+    d.setHours(14, 0, 0, 0)
+    onSelect(d)
+    setInputValue(format(d, "yyyy-MM-dd HH:mm:ss"))
+    setOpen(false)
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value
+    setInputValue(val)
+    const parsed = new Date(val)
+    if (!isNaN(parsed.getTime())) {
+      onSelect(parsed)
     }
-    const now = new Date()
-    selected.setHours(now.getHours(), now.getMinutes(), now.getSeconds())
-    onSelect(selected)
   }
 
   return (
     <div className="flex flex-col gap-1.5">
       <Label>{label}</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {date ? format(date, "yyyy-MM-dd HH:mm:ss") : "Välj datum"}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0">
-          <Calendar mode="single" selected={date} onSelect={handleSelect} />
-        </PopoverContent>
-      </Popover>
+      <div className="flex gap-2">
+        <Input
+          value={inputValue}
+          onChange={handleInputChange}
+          placeholder="yyyy-MM-dd HH:mm:ss"
+          className="font-mono text-sm"
+        />
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon" className="shrink-0">
+              <CalendarIcon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar mode="single" selected={date} onSelect={handleSelect} locale={sv} weekStartsOn={1} showWeekNumber />
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   )
 }
@@ -81,6 +97,7 @@ function formatXmlDate(date: Date | undefined): string {
 
 function generateXml(fields: {
   identificationNumber: string
+  documentInstance: string
   subscriberId: string
   transactionId: string
   messageId: string
@@ -92,6 +109,7 @@ function generateXml(fields: {
 }): string {
   const {
     identificationNumber,
+    documentInstance,
     subscriberId,
     transactionId,
     messageId,
@@ -111,7 +129,7 @@ function generateXml(fields: {
                <int:IdentificationNumber>${identificationNumber}</int:IdentificationNumber>
                <int:DocumentType>AFMessage</int:DocumentType>
                <int:SubsriberId>${subscriberId}</int:SubsriberId>
-               <int:DocumentInstance>ORIGINAL</int:DocumentInstance>
+               <int:DocumentInstance>${documentInstance}</int:DocumentInstance>
             </int:Header>
             <int:Body>
                <int:TransactionId>${transactionId}</int:TransactionId>
@@ -126,8 +144,8 @@ function generateXml(fields: {
                <int:AFCaseWorker>
                   <int:Firstname>Firstname</int:Firstname>
                   <int:Lastname>Lastname</int:Lastname>
-                  <int:TelephoneNumber>0735804448</int:TelephoneNumber>
-                  <int:EmailAddress>autotest@sverigesakassor.se</int:EmailAddress>
+                  <int:TelephoneNumber>TelephoneNumber</int:TelephoneNumber>
+                  <int:EmailAddress>EmailAddress</int:EmailAddress>
                </int:AFCaseWorker>
                <int:AdditionalParty>
                   <int:AdditionalPartyName>AdditionalPartyName</int:AdditionalPartyName>
@@ -159,8 +177,8 @@ function generateXml(fields: {
                      <int:POSTNR>13131</int:POSTNR>
                      <int:POSTORT>stockholm</int:POSTORT>
                      <int:UTLANDSK_POSTADRESS>utlandsk post address</int:UTLANDSK_POSTADRESS>
-                     <int:EPOST>autotest@sverigesakassor.se</int:EPOST>
-                     <int:HEMSIDA>sverigesakassor.se</int:HEMSIDA>
+                     <int:EPOST>EPOST</int:EPOST>
+                     <int:HEMSIDA>HEMSIDA</int:HEMSIDA>
                      <int:FAXNR>0123456</int:FAXNR>
                      <int:PLATSBESKRIVNING>platsbeskrivning</int:PLATSBESKRIVNING>
                      <int:BEHORIG_KRAV>behorig krav</int:BEHORIG_KRAV>
@@ -174,7 +192,7 @@ function generateXml(fields: {
                      <int:SISTA_ANSOK_PUBLDATUM>2020-02-10</int:SISTA_ANSOK_PUBLDATUM>
                      <int:SISTA_ANSOKNINGSSDATUM>2020-02-10</int:SISTA_ANSOKNINGSSDATUM>
                      <int:ANSOKAN_OVRIGT>ansokan ovrigt</int:ANSOKAN_OVRIGT>
-                     <int:ANSOKAN_EPOST>autotest@sverigesakassor.se</int:ANSOKAN_EPOST>
+                     <int:ANSOKAN_EPOST>ANSOKAN_EPOST</int:ANSOKAN_EPOST>
                      <int:REFERENSNR>referensnr</int:REFERENSNR>
                      <int:URL_ANNONS_PLATSBANKEN>urlannonsplatsbanken</int:URL_ANNONS_PLATSBANKEN>
                   </int:Plats>
@@ -195,21 +213,30 @@ function generateXml(fields: {
 
 export default function App() {
   const [identificationNumber, setIdentificationNumber] = useState("")
+  const [documentInstance, setDocumentInstance] = useState("ORIGINAL")
   const [subscriberId, setSubscriberId] = useState("")
   const [transactionId, setTransactionId] = useState("")
   const [messageId, setMessageId] = useState("")
-  const [messageCreated, setMessageCreated] = useState<Date | undefined>()
-  const [messageSent, setMessageSent] = useState<Date | undefined>()
-  const [messageDate, setMessageDate] = useState<Date | undefined>()
+  const [messageCreated, setMessageCreated] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() - 7); d.setHours(14, 0, 0, 0); return d })
+  const [messageSent, setMessageSent] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(14, 0, 0, 0); return d })
+  const [messageDate, setMessageDate] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() - 14); d.setHours(14, 0, 0, 0); return d })
   const [messageType, setMessageType] = useState("")
+  const [xmlType, setXmlType] = useState<"AFM" | "Skanning">("AFM")
   const [generatedXml, setGeneratedXml] = useState("")
   const [copied, setCopied] = useState(false)
+  const [generated, setGenerated] = useState(false)
 
-  const messageTypeText = MESSAGE_TYPES.find((m) => m.value === messageType)?.text ?? ""
+  const [messageTypeText, setMessageTypeText] = useState("")
+
+  function handleMessageTypeChange(value: string) {
+    setMessageType(value)
+    setMessageTypeText(MESSAGE_TYPES.find((m) => m.value === value)?.text ?? "")
+  }
 
   function handleGenerate() {
     const xml = generateXml({
       identificationNumber,
+      documentInstance,
       subscriberId,
       transactionId,
       messageId,
@@ -220,6 +247,8 @@ export default function App() {
       messageTypeText,
     })
     setGeneratedXml(xml)
+    setGenerated(true)
+    setTimeout(() => setGenerated(false), 2000)
   }
 
   function handleCopy() {
@@ -241,31 +270,64 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-7xl mx-auto space-y-4">
-        <h1 className="text-3xl font-bold tracking-tight">XML-generator – AFMessage</h1>
+        <h1 className="text-3xl font-bold tracking-tight">XML-generator</h1>
         <p className="text-muted-foreground">Fyll i fälten nedan och generera ett SOAP-meddelande.</p>
+        <p className="text-sm text-muted-foreground border rounded-md px-3 py-2 bg-muted">
+          🔒 Inga personnummer eller andra uppgifter sparas – allt hanteras lokalt i din webbläsare.
+        </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 items-start">
           {/* Vänster: formulär */}
           <Card>
             <CardHeader>
               <CardTitle>Redigerbara fält</CardTitle>
+              <div className="flex gap-2 pt-1">
+                <Button
+                  variant={xmlType === "AFM" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setXmlType("AFM")}
+                >
+                  AFM
+                </Button>
+                <Button
+                  variant={xmlType === "Skanning" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setXmlType("Skanning")}
+                >
+                  Skanning
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              {xmlType === "Skanning" && (
+                <p className="text-muted-foreground text-sm">Skanning är inte implementerat ännu.</p>
+              )}
+              {xmlType === "AFM" && (<>
               <div className="grid grid-cols-1 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="identificationNumber">IdentificationNumber</Label>
                   <Input
                     id="identificationNumber"
-                    placeholder="t.ex. 199012193554"
                     value={identificationNumber}
                     onChange={(e) => setIdentificationNumber(e.target.value)}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
+                  <Label>DocumentInstance</Label>
+                  <Select value={documentInstance} onValueChange={setDocumentInstance}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ORIGINAL">ORIGINAL</SelectItem>
+                      <SelectItem value="COPY">COPY</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1.5">
                   <Label htmlFor="subscriberId">SubscriberId</Label>
                   <Input
                     id="subscriberId"
-                    placeholder="t.ex. 58EA2B5B10B44AA5..."
                     value={subscriberId}
                     onChange={(e) => setSubscriberId(e.target.value)}
                   />
@@ -274,7 +336,6 @@ export default function App() {
                   <Label htmlFor="transactionId">TransactionId</Label>
                   <Input
                     id="transactionId"
-                    placeholder="t.ex. 991236129"
                     value={transactionId}
                     onChange={(e) => setTransactionId(e.target.value)}
                   />
@@ -283,7 +344,6 @@ export default function App() {
                   <Label htmlFor="messageId">MessageId</Label>
                   <Input
                     id="messageId"
-                    placeholder="t.ex. 800001472"
                     value={messageId}
                     onChange={(e) => setMessageId(e.target.value)}
                   />
@@ -292,7 +352,7 @@ export default function App() {
 
               <div className="flex flex-col gap-1.5">
                 <Label>MessageType</Label>
-                <Select value={messageType} onValueChange={setMessageType}>
+                <Select value={messageType} onValueChange={handleMessageTypeChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Välj meddelandetyp..." />
                   </SelectTrigger>
@@ -305,7 +365,11 @@ export default function App() {
                   </SelectContent>
                 </Select>
                 {messageTypeText && (
-                  <p className="text-sm text-muted-foreground">{messageTypeText}</p>
+                  <Input
+                    value={messageTypeText}
+                    onChange={(e) => setMessageTypeText(e.target.value)}
+                    className="text-sm"
+                  />
                 )}
               </div>
 
@@ -318,13 +382,21 @@ export default function App() {
               </div>
 
               <Button onClick={handleGenerate} className="w-full">
-                Generera XML
+                {generated ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Genererad!
+                  </>
+                ) : (
+                  "Generera XML"
+                )}
               </Button>
+              </>)}
             </CardContent>
           </Card>
 
           {/* Höger: XML-förhandsvisning */}
-          <Card className="sticky top-8">
+          <Card className="lg:sticky lg:top-8">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Genererad XML</CardTitle>
               {generatedXml && (
@@ -341,13 +413,9 @@ export default function App() {
               )}
             </CardHeader>
             <CardContent>
-              {generatedXml ? (
-                <pre className="bg-muted rounded-md p-4 text-xs overflow-auto max-h-[70vh] whitespace-pre-wrap break-all">
-                  {generatedXml}
-                </pre>
-              ) : (
-                <p className="text-muted-foreground text-sm">XML visas här när du klickar på "Generera XML".</p>
-              )}
+              <pre className="bg-muted rounded-md p-4 text-xs overflow-auto max-h-[70vh] whitespace-pre-wrap break-all min-h-24">
+                {generatedXml || <span className="text-muted-foreground">XML visas här när du klickar på "Generera XML".</span>}
+              </pre>
             </CardContent>
           </Card>
         </div>
