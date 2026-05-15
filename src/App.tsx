@@ -12,6 +12,19 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 import { cn } from "@/lib/utils"
 import { sv } from "date-fns/locale"
 
+type GeneratedFields = {
+  identificationNumber: string
+  documentInstance: string
+  subscriberId: string
+  transactionId: string
+  messageId: string
+  messageCreated: string
+  messageSent: string
+  messageDate: string
+  messageType: string
+  messageTypeText: string
+}
+
 const MESSAGE_TYPES: { label: string; value: string; text: string }[] = [
   { label: "ALF43P1 / 7:2P1",   value: "ALF43P1",  text: "Inte medverkat till att upprätta en handlingsplan." },
   { label: "ALF43P2 / 7:2P2",   value: "ALF43P2",  text: "Inte lämnat in aktivitetsrapport i tid." },
@@ -225,6 +238,8 @@ export default function App() {
   const [generatedXml, setGeneratedXml] = useState("")
   const [copied, setCopied] = useState(false)
   const [generated, setGenerated] = useState(false)
+  const [prevGeneratedFields, setPrevGeneratedFields] = useState<GeneratedFields | null>(null)
+  const [highlightedValues, setHighlightedValues] = useState<Set<string>>(new Set())
 
   const [messageTypeText, setMessageTypeText] = useState("")
 
@@ -234,6 +249,18 @@ export default function App() {
   }
 
   function handleGenerate() {
+    const currentFields: GeneratedFields = {
+      identificationNumber,
+      documentInstance,
+      subscriberId,
+      transactionId,
+      messageId,
+      messageCreated: formatXmlDate(messageCreated),
+      messageSent: formatXmlDate(messageSent),
+      messageDate: formatXmlDate(messageDate),
+      messageType,
+      messageTypeText,
+    }
     const xml = generateXml({
       identificationNumber,
       documentInstance,
@@ -249,6 +276,35 @@ export default function App() {
     setGeneratedXml(xml)
     setGenerated(true)
     setTimeout(() => setGenerated(false), 2000)
+    if (prevGeneratedFields) {
+      const changed = new Set<string>()
+      for (const key of Object.keys(currentFields) as (keyof GeneratedFields)[]) {
+        if (currentFields[key] !== prevGeneratedFields[key] && currentFields[key] !== '') {
+          changed.add(currentFields[key])
+        }
+      }
+      setHighlightedValues(changed)
+    } else {
+      setHighlightedValues(new Set())
+    }
+    setPrevGeneratedFields(currentFields)
+  }
+
+  function renderXmlWithHighlights(xml: string, highlights: Set<string>) {
+    if (highlights.size === 0) return xml
+    const lines = xml.split('\n')
+    return lines.map((line, i) => {
+      const match = line.match(/^(\s*<[^>\/][^>]*>)([^<]+)(<\/[^>]+>)(\s*)$/)
+      if (match) {
+        const [, open, value, close, trailing] = match
+        if (highlights.has(value)) {
+          return (
+            <span key={i}>{open}<span className="text-red-500">{value}</span>{close}{trailing}{i < lines.length - 1 ? '\n' : ''}</span>
+          )
+        }
+      }
+      return i < lines.length - 1 ? line + '\n' : line
+    })
   }
 
   function handleCopy() {
@@ -270,17 +326,17 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-7xl mx-auto space-y-4">
-        <h1 className="text-3xl font-bold tracking-tight">XML-generator</h1>
-        <p className="text-muted-foreground">Fyll i fälten nedan och generera ett SOAP-meddelande.</p>
+        <h1 className="text-3xl font-bold tracking-tight">XML Generator</h1>
+        <p className="text-muted-foreground">Fill in the fields below and generate a SOAP message.</p>
         <p className="text-sm text-muted-foreground border rounded-md px-3 py-2 bg-muted">
-          🔒 Inga personnummer eller andra uppgifter sparas – allt hanteras lokalt i din webbläsare.
+          🔒 No personal identity numbers or other data are saved – everything is handled locally in your browser.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 items-start">
-          {/* Vänster: formulär */}
+          {/* Left: form */}
           <Card>
             <CardHeader>
-              <CardTitle>Redigerbara fält</CardTitle>
+              <CardTitle>Editable fields</CardTitle>
               <div className="flex gap-2 pt-1">
                 <Button
                   variant={xmlType === "AFM" ? "default" : "outline"}
@@ -300,7 +356,7 @@ export default function App() {
             </CardHeader>
             <CardContent className="space-y-6">
               {xmlType === "Skanning" && (
-                <p className="text-muted-foreground text-sm">Skanning är inte implementerat ännu.</p>
+                <p className="text-muted-foreground text-sm">Scanning is not yet implemented.</p>
               )}
               {xmlType === "AFM" && (<>
               <div className="grid grid-cols-1 gap-4">
@@ -334,19 +390,25 @@ export default function App() {
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="transactionId">TransactionId</Label>
-                  <Input
-                    id="transactionId"
-                    value={transactionId}
-                    onChange={(e) => setTransactionId(e.target.value)}
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="transactionId"
+                      value={transactionId}
+                      onChange={(e) => setTransactionId(e.target.value)}
+                    />
+                    <Button variant="outline" size="icon" className="shrink-0" onClick={() => setTransactionId((v) => String((parseInt(v) || 0) + 1))}>+</Button>
+                  </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="messageId">MessageId</Label>
-                  <Input
-                    id="messageId"
-                    value={messageId}
-                    onChange={(e) => setMessageId(e.target.value)}
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="messageId"
+                      value={messageId}
+                      onChange={(e) => setMessageId(e.target.value)}
+                    />
+                    <Button variant="outline" size="icon" className="shrink-0" onClick={() => setMessageId((v) => String((parseInt(v) || 0) + 1))}>+</Button>
+                  </div>
                 </div>
               </div>
 
@@ -354,7 +416,7 @@ export default function App() {
                 <Label>MessageType</Label>
                 <Select value={messageType} onValueChange={handleMessageTypeChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Välj meddelandetyp..." />
+                    <SelectValue placeholder="Select message type..." />
                   </SelectTrigger>
                   <SelectContent>
                     {MESSAGE_TYPES.map((m) => (
@@ -385,36 +447,36 @@ export default function App() {
                 {generated ? (
                   <>
                     <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Genererad!
+                    Generated!
                   </>
                 ) : (
-                  "Generera XML"
+                  "Generate XML"
                 )}
               </Button>
               </>)}
             </CardContent>
           </Card>
 
-          {/* Höger: XML-förhandsvisning */}
+          {/* Right: XML preview */}
           <Card className="lg:sticky lg:top-8">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Genererad XML</CardTitle>
+              <CardTitle>Generated XML</CardTitle>
               {generatedXml && (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={handleCopy}>
                     <ClipboardCopy className="h-4 w-4 mr-1" />
-                    {copied ? "Kopierat!" : "Kopiera"}
+                    {copied ? "Copied!" : "Copy"}
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleDownload}>
                     <Download className="h-4 w-4 mr-1" />
-                    Spara
+                    Save
                   </Button>
                 </div>
               )}
             </CardHeader>
             <CardContent>
               <pre className="bg-muted rounded-md p-4 text-xs overflow-auto max-h-[70vh] whitespace-pre-wrap break-all min-h-24">
-                {generatedXml || <span className="text-muted-foreground">XML visas här när du klickar på "Generera XML".</span>}
+                {generatedXml ? renderXmlWithHighlights(generatedXml, highlightedValues) : <span className="text-muted-foreground">XML will appear here when you click "Generate XML".</span>}
               </pre>
             </CardContent>
           </Card>

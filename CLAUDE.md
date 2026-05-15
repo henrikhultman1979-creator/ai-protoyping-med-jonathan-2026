@@ -1,5 +1,5 @@
 ## Dev server
-- URL: https://stunning-giggle-p56gvqw6766h796w-5173.app.github.dev
+- URL: https://ominous-disco-g4g54gwpwgjjhv7gv-5173.app.github.dev
 - Always show the full forwarded URL when starting the dev server.
 
 ## Reference docs
