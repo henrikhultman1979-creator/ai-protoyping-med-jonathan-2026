@@ -23,7 +23,38 @@ type GeneratedFields = {
   messageDate: string
   messageType: string
   messageTypeText: string
+  messageText: string
 }
+
+type ComplementGeneratedFields = {
+  identificationNumber: string
+  documentInstance: string
+  subscriberId: string
+  transactionId: string
+  messageComplementId: string
+  messageReferenceId: string
+  messageComplementRequestId: string
+  messageComplementText: string
+  messageComplementSent: string
+}
+
+type PosGeneratedFields = {
+  identificationNumber: string
+  subscriberId: string
+  transactionId: string
+  messageId: string
+  messageIdReference: string
+  messageCreated: string
+  messageSent: string
+  messageDate: string
+  messageTypeText: string
+  messageText: string
+}
+
+const DEFAULT_MESSAGE_TEXT = "VARASIDOR TEST REQUEST"
+const DEFAULT_MESSAGE_COMPLEMENT_TEXT = "TEST REQUEST-CreateAFMessageComplementDocumentRequest."
+const DEFAULT_POS_MESSAGE_TYPE_TEXT = "Arbetssökande med förhinder -14 Den arbetssökande är tillsvidare förhindrad att aktivt söka eller ta ett arbete och uppfyller därför inte de allmänna villkoren."
+const DEFAULT_POS_MESSAGE_TEXT = "VARASIDOR TEST REQUEST-CreatePositiveAFMessageDocumentRequest"
 
 const MESSAGE_TYPES: { label: string; value: string; text: string }[] = [
   { label: "ALF43P1 / 7:2P1",   value: "ALF43P1",  text: "Inte medverkat till att upprätta en handlingsplan." },
@@ -108,53 +139,16 @@ function formatXmlDate(date: Date | undefined): string {
   return format(date, "yyyy-MM-dd'T'HH:mm:ss.SSS") + "+01:00"
 }
 
-function generateXml(fields: {
-  identificationNumber: string
-  documentInstance: string
-  subscriberId: string
-  transactionId: string
-  messageId: string
-  messageCreated: Date | undefined
-  messageSent: Date | undefined
-  messageDate: Date | undefined
-  messageType: string
-  messageTypeText: string
-}): string {
-  const {
-    identificationNumber,
-    documentInstance,
-    subscriberId,
-    transactionId,
-    messageId,
-    messageCreated,
-    messageSent,
-    messageDate,
-    messageType,
-    messageTypeText,
-  } = fields
+function messageIdReferenceListXml(messageIdReference: string): string {
+  return messageIdReference
+    ? `<int:MessageIdReferenceList>
+                  <int:MessageIdReference>${messageIdReference}</int:MessageIdReference>
+               </int:MessageIdReferenceList>`
+    : `<int:MessageIdReferenceList/>`
+}
 
-  return `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:int="http://INT013.DocumentService.Schemas">
-   <soapenv:Header/>
-   <soapenv:Body>
-      <int:CreateAFMessageDocumentRequest>
-         <int:AFMessageDocument>
-            <int:Header>
-               <int:IdentificationNumber>${identificationNumber}</int:IdentificationNumber>
-               <int:DocumentType>AFMessage</int:DocumentType>
-               <int:SubsriberId>${subscriberId}</int:SubsriberId>
-               <int:DocumentInstance>${documentInstance}</int:DocumentInstance>
-            </int:Header>
-            <int:Body>
-               <int:TransactionId>${transactionId}</int:TransactionId>
-               <int:MessageId>${messageId}</int:MessageId>
-               <int:MessageIdReferenceList/>
-               <int:MessageCreated>${formatXmlDate(messageCreated)}</int:MessageCreated>
-               <int:MessageSent>${formatXmlDate(messageSent)}</int:MessageSent>
-               <int:MessageType>${messageType}</int:MessageType>
-               <int:MessageTypeText>${messageTypeText}</int:MessageTypeText>
-               <int:MessageDate>${formatXmlDate(messageDate)}</int:MessageDate>
-               <int:MessageText>VARASIDOR TEST REQUEST</int:MessageText>
-               <int:AFCaseWorker>
+function staticAfMessageBodyXml(utdragstyp: string): string {
+  return `               <int:AFCaseWorker>
                   <int:Firstname>Firstname</int:Firstname>
                   <int:Lastname>Lastname</int:Lastname>
                   <int:TelephoneNumber>TelephoneNumber</int:TelephoneNumber>
@@ -212,14 +206,180 @@ function generateXml(fields: {
                </int:AFPlatsbanken>
                <int:AFUtdrag>
                   <int:Utdrag>
-                     <int:Utdragstyp>Aktivitetsrapport</int:Utdragstyp>
+                     <int:Utdragstyp>${utdragstyp}</int:Utdragstyp>
                      <int:Utdragstext>utdragstext</int:Utdragstext>
+                     <int:Utdragsdatum>2020-02-10T00:00:00.000+01:00</int:Utdragsdatum>
+                  </int:Utdrag>
+               </int:AFUtdrag>`
+}
+
+function generateXml(fields: {
+  identificationNumber: string
+  documentInstance: string
+  subscriberId: string
+  transactionId: string
+  messageId: string
+  messageCreated: Date | undefined
+  messageSent: Date | undefined
+  messageDate: Date | undefined
+  messageType: string
+  messageTypeText: string
+  messageText: string
+}): string {
+  const {
+    identificationNumber,
+    documentInstance,
+    subscriberId,
+    transactionId,
+    messageId,
+    messageCreated,
+    messageSent,
+    messageDate,
+    messageType,
+    messageTypeText,
+    messageText,
+  } = fields
+
+  return `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:int="http://INT013.DocumentService.Schemas">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <int:CreateAFMessageDocumentRequest>
+         <int:AFMessageDocument>
+            <int:Header>
+               <int:IdentificationNumber>${identificationNumber}</int:IdentificationNumber>
+               <int:DocumentType>AFMessage</int:DocumentType>
+               <int:SubsriberId>${subscriberId}</int:SubsriberId>
+               <int:DocumentInstance>${documentInstance}</int:DocumentInstance>
+            </int:Header>
+            <int:Body>
+               <int:TransactionId>${transactionId}</int:TransactionId>
+               <int:MessageId>${messageId}</int:MessageId>
+               <int:MessageIdReferenceList/>
+               <int:MessageCreated>${formatXmlDate(messageCreated)}</int:MessageCreated>
+               <int:MessageSent>${formatXmlDate(messageSent)}</int:MessageSent>
+               <int:MessageType>${messageType}</int:MessageType>
+               <int:MessageTypeText>${messageTypeText}</int:MessageTypeText>
+               <int:MessageDate>${formatXmlDate(messageDate)}</int:MessageDate>
+               <int:MessageText>${messageText}</int:MessageText>
+${staticAfMessageBodyXml("Aktivitetsrapport")}
+            </int:Body>
+         </int:AFMessageDocument>
+      </int:CreateAFMessageDocumentRequest>
+   </soapenv:Body>
+</soapenv:Envelope>`
+}
+
+function generatePosXml(fields: {
+  identificationNumber: string
+  subscriberId: string
+  transactionId: string
+  messageId: string
+  messageIdReference: string
+  messageCreated: Date | undefined
+  messageSent: Date | undefined
+  messageDate: Date | undefined
+  messageTypeText: string
+  messageText: string
+}): string {
+  const {
+    identificationNumber,
+    subscriberId,
+    transactionId,
+    messageId,
+    messageIdReference,
+    messageCreated,
+    messageSent,
+    messageDate,
+    messageTypeText,
+    messageText,
+  } = fields
+
+  return `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:int="http://INT013.DocumentService.Schemas">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <int:CreatePositiveAFMessageDocumentRequest>
+         <int:AFMessageDocument>
+            <int:Header>
+               <int:IdentificationNumber>${identificationNumber}</int:IdentificationNumber>
+               <int:DocumentType>AFPositiveMessage</int:DocumentType>
+               <int:SubsriberId>${subscriberId}</int:SubsriberId>
+               <int:DocumentInstance>ORIGINAL</int:DocumentInstance>
+            </int:Header>
+            <int:Body>
+               <int:TransactionId>${transactionId}</int:TransactionId>
+               <int:MessageId>${messageId}</int:MessageId>
+               ${messageIdReferenceListXml(messageIdReference)}
+               <int:MessageCreated>${formatXmlDate(messageCreated)}</int:MessageCreated>
+               <int:MessageSent>${formatXmlDate(messageSent)}</int:MessageSent>
+               <int:MessageType>ALF9POS</int:MessageType>
+               <int:MessageTypeText>${messageTypeText}</int:MessageTypeText>
+               <int:MessageDate>${formatXmlDate(messageDate)}</int:MessageDate>
+               <int:MessageText>${messageText}</int:MessageText>
+${staticAfMessageBodyXml("Handlingsplan")}
+            </int:Body>
+         </int:AFMessageDocument>
+      </int:CreatePositiveAFMessageDocumentRequest>
+   </soapenv:Body>
+</soapenv:Envelope>`
+}
+
+function generateComplementXml(fields: {
+  identificationNumber: string
+  documentInstance: string
+  subscriberId: string
+  transactionId: string
+  messageComplementId: string
+  messageReferenceId: string
+  messageComplementRequestId: string
+  messageComplementText: string
+  messageComplementSent: Date | undefined
+}): string {
+  const {
+    identificationNumber,
+    documentInstance,
+    subscriberId,
+    transactionId,
+    messageComplementId,
+    messageReferenceId,
+    messageComplementRequestId,
+    messageComplementText,
+    messageComplementSent,
+  } = fields
+
+  return `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:int="http://INT013.DocumentService.Schemas">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <int:CreateAFMessageComplementDocumentRequest>
+         <int:AFMessageComplementDocument>
+            <int:Header>
+               <int:IdentificationNumber>${identificationNumber}</int:IdentificationNumber>
+               <int:DocumentType>AFMessageComplement</int:DocumentType>
+               <int:SubsriberId>${subscriberId}</int:SubsriberId>
+               <int:DocumentInstance>${documentInstance}</int:DocumentInstance>
+            </int:Header>
+            <int:Body>
+               <int:TransactionId>${transactionId}</int:TransactionId>
+               <int:MessageComplementId>${messageComplementId}</int:MessageComplementId>
+               <int:MessageReferenceId>${messageReferenceId}</int:MessageReferenceId>
+               <int:MessageComplementRequestId>${messageComplementRequestId}</int:MessageComplementRequestId>
+               <int:MessageComplementText>${messageComplementText}</int:MessageComplementText>
+               <int:MessageComplementSent>${formatXmlDate(messageComplementSent)}</int:MessageComplementSent>
+               <int:AFCaseWorker>
+                  <int:Firstname>Firstname</int:Firstname>
+                  <int:Lastname>Lastname</int:Lastname>
+                  <int:TelephoneNumber>TelephoneNumber</int:TelephoneNumber>
+                  <int:EmailAddress>EmailAddress</int:EmailAddress>
+               </int:AFCaseWorker>
+               <int:AFUtdrag>
+                  <int:Utdrag>
+                     <int:Utdragstyp>Handlingsplan</int:Utdragstyp>
+                     <int:Utdragstext>Utdragstext</int:Utdragstext>
                      <int:Utdragsdatum>2020-02-10T00:00:00.000+01:00</int:Utdragsdatum>
                   </int:Utdrag>
                </int:AFUtdrag>
             </int:Body>
-         </int:AFMessageDocument>
-      </int:CreateAFMessageDocumentRequest>
+         </int:AFMessageComplementDocument>
+      </int:CreateAFMessageComplementDocumentRequest>
    </soapenv:Body>
 </soapenv:Envelope>`
 }
@@ -234,14 +394,39 @@ export default function App() {
   const [messageSent, setMessageSent] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(14, 0, 0, 0); return d })
   const [messageDate, setMessageDate] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() - 14); d.setHours(14, 0, 0, 0); return d })
   const [messageType, setMessageType] = useState("")
-  const [xmlType, setXmlType] = useState<"AFM" | "Skanning">("AFM")
+  const [xmlType, setXmlType] = useState<"AFM" | "AFMPOS" | "AFM Komplettering">("AFM")
   const [generatedXml, setGeneratedXml] = useState("")
   const [copied, setCopied] = useState(false)
+  const [messageIdCopied, setMessageIdCopied] = useState(false)
   const [generated, setGenerated] = useState(false)
   const [prevGeneratedFields, setPrevGeneratedFields] = useState<GeneratedFields | null>(null)
+  const [prevComplementGeneratedFields, setPrevComplementGeneratedFields] = useState<ComplementGeneratedFields | null>(null)
+  const [prevPosGeneratedFields, setPrevPosGeneratedFields] = useState<PosGeneratedFields | null>(null)
   const [highlightedValues, setHighlightedValues] = useState<Set<string>>(new Set())
 
   const [messageTypeText, setMessageTypeText] = useState("")
+  const [messageText, setMessageText] = useState(DEFAULT_MESSAGE_TEXT)
+
+  const [complementIdentificationNumber, setComplementIdentificationNumber] = useState("")
+  const complementDocumentInstance = "ORIGINAL"
+  const [complementSubscriberId, setComplementSubscriberId] = useState("")
+  const [complementTransactionId, setComplementTransactionId] = useState("")
+  const [complementMessageComplementId, setComplementMessageComplementId] = useState("")
+  const [complementMessageReferenceId, setComplementMessageReferenceId] = useState("")
+  const [complementMessageComplementRequestId, setComplementMessageComplementRequestId] = useState("")
+  const [complementMessageComplementText, setComplementMessageComplementText] = useState(DEFAULT_MESSAGE_COMPLEMENT_TEXT)
+  const [complementMessageComplementSent, setComplementMessageComplementSent] = useState<Date | undefined>(() => { const d = new Date(); d.setHours(14, 0, 0, 0); return d })
+
+  const [posIdentificationNumber, setPosIdentificationNumber] = useState("")
+  const [posSubscriberId, setPosSubscriberId] = useState("")
+  const [posTransactionId, setPosTransactionId] = useState("")
+  const [posMessageId, setPosMessageId] = useState("")
+  const [posMessageIdReference, setPosMessageIdReference] = useState("")
+  const [posMessageCreated, setPosMessageCreated] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() - 7); d.setHours(14, 0, 0, 0); return d })
+  const [posMessageSent, setPosMessageSent] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(14, 0, 0, 0); return d })
+  const [posMessageDate, setPosMessageDate] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() - 14); d.setHours(14, 0, 0, 0); return d })
+  const [posMessageTypeText, setPosMessageTypeText] = useState(DEFAULT_POS_MESSAGE_TYPE_TEXT)
+  const [posMessageText, setPosMessageText] = useState(DEFAULT_POS_MESSAGE_TEXT)
 
   function handleMessageTypeChange(value: string) {
     setMessageType(value)
@@ -260,6 +445,7 @@ export default function App() {
       messageDate: formatXmlDate(messageDate),
       messageType,
       messageTypeText,
+      messageText,
     }
     const xml = generateXml({
       identificationNumber,
@@ -272,6 +458,7 @@ export default function App() {
       messageDate,
       messageType,
       messageTypeText,
+      messageText,
     })
     setGeneratedXml(xml)
     setGenerated(true)
@@ -288,6 +475,88 @@ export default function App() {
       setHighlightedValues(new Set())
     }
     setPrevGeneratedFields(currentFields)
+  }
+
+  function handleGenerateComplement() {
+    const currentFields: ComplementGeneratedFields = {
+      identificationNumber: complementIdentificationNumber,
+      documentInstance: complementDocumentInstance,
+      subscriberId: complementSubscriberId,
+      transactionId: complementTransactionId,
+      messageComplementId: complementMessageComplementId,
+      messageReferenceId: complementMessageReferenceId,
+      messageComplementRequestId: complementMessageComplementRequestId,
+      messageComplementText: complementMessageComplementText,
+      messageComplementSent: formatXmlDate(complementMessageComplementSent),
+    }
+    const xml = generateComplementXml({
+      identificationNumber: complementIdentificationNumber,
+      documentInstance: complementDocumentInstance,
+      subscriberId: complementSubscriberId,
+      transactionId: complementTransactionId,
+      messageComplementId: complementMessageComplementId,
+      messageReferenceId: complementMessageReferenceId,
+      messageComplementRequestId: complementMessageComplementRequestId,
+      messageComplementText: complementMessageComplementText,
+      messageComplementSent: complementMessageComplementSent,
+    })
+    setGeneratedXml(xml)
+    setGenerated(true)
+    setTimeout(() => setGenerated(false), 2000)
+    if (prevComplementGeneratedFields) {
+      const changed = new Set<string>()
+      for (const key of Object.keys(currentFields) as (keyof ComplementGeneratedFields)[]) {
+        if (currentFields[key] !== prevComplementGeneratedFields[key] && currentFields[key] !== '') {
+          changed.add(currentFields[key])
+        }
+      }
+      setHighlightedValues(changed)
+    } else {
+      setHighlightedValues(new Set())
+    }
+    setPrevComplementGeneratedFields(currentFields)
+  }
+
+  function handleGeneratePos() {
+    const currentFields: PosGeneratedFields = {
+      identificationNumber: posIdentificationNumber,
+      subscriberId: posSubscriberId,
+      transactionId: posTransactionId,
+      messageId: posMessageId,
+      messageIdReference: posMessageIdReference,
+      messageCreated: formatXmlDate(posMessageCreated),
+      messageSent: formatXmlDate(posMessageSent),
+      messageDate: formatXmlDate(posMessageDate),
+      messageTypeText: posMessageTypeText,
+      messageText: posMessageText,
+    }
+    const xml = generatePosXml({
+      identificationNumber: posIdentificationNumber,
+      subscriberId: posSubscriberId,
+      transactionId: posTransactionId,
+      messageId: posMessageId,
+      messageIdReference: posMessageIdReference,
+      messageCreated: posMessageCreated,
+      messageSent: posMessageSent,
+      messageDate: posMessageDate,
+      messageTypeText: posMessageTypeText,
+      messageText: posMessageText,
+    })
+    setGeneratedXml(xml)
+    setGenerated(true)
+    setTimeout(() => setGenerated(false), 2000)
+    if (prevPosGeneratedFields) {
+      const changed = new Set<string>()
+      for (const key of Object.keys(currentFields) as (keyof PosGeneratedFields)[]) {
+        if (currentFields[key] !== prevPosGeneratedFields[key] && currentFields[key] !== '') {
+          changed.add(currentFields[key])
+        }
+      }
+      setHighlightedValues(changed)
+    } else {
+      setHighlightedValues(new Set())
+    }
+    setPrevPosGeneratedFields(currentFields)
   }
 
   function renderXmlWithHighlights(xml: string, highlights: Set<string>) {
@@ -313,12 +582,22 @@ export default function App() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  function handleCopyMessageId() {
+    navigator.clipboard.writeText(messageId)
+    setMessageIdCopied(true)
+    setTimeout(() => setMessageIdCopied(false), 2000)
+  }
+
   function handleDownload() {
     const blob = new Blob([generatedXml], { type: "text/plain;charset=utf-8" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `${identificationNumber}_${messageType}_${messageId}.txt`
+    a.download = xmlType === "AFM"
+      ? `${identificationNumber}_${messageType}_${messageId}.txt`
+      : xmlType === "AFMPOS"
+      ? `${posIdentificationNumber}_AFMPOS_${posMessageId}.txt`
+      : `${complementIdentificationNumber}_Komplettering_${complementMessageComplementId}.txt`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -346,18 +625,22 @@ export default function App() {
                   AFM
                 </Button>
                 <Button
-                  variant={xmlType === "Skanning" ? "default" : "outline"}
+                  variant={xmlType === "AFMPOS" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setXmlType("Skanning")}
+                  onClick={() => setXmlType("AFMPOS")}
                 >
-                  Skanning
+                  AFMPOS
+                </Button>
+                <Button
+                  variant={xmlType === "AFM Komplettering" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setXmlType("AFM Komplettering")}
+                >
+                  AFM Komplettering
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {xmlType === "Skanning" && (
-                <p className="text-muted-foreground text-sm">Scanning is not yet implemented.</p>
-              )}
               {xmlType === "AFM" && (<>
               <div className="grid grid-cols-1 gap-4">
                 <div className="flex flex-col gap-1.5">
@@ -408,6 +691,9 @@ export default function App() {
                       onChange={(e) => setMessageId(e.target.value)}
                     />
                     <Button variant="outline" size="icon" className="shrink-0" onClick={() => setMessageId((v) => String((parseInt(v) || 0) + 1))}>+</Button>
+                    <Button variant="outline" size="icon" className="shrink-0" onClick={handleCopyMessageId}>
+                      {messageIdCopied ? <CheckCircle2 className="h-4 w-4" /> : <ClipboardCopy className="h-4 w-4" />}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -435,6 +721,15 @@ export default function App() {
                 )}
               </div>
 
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="messageText">MessageText</Label>
+                <Input
+                  id="messageText"
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                />
+              </div>
+
               <Separator />
 
               <div className="grid grid-cols-1 gap-4">
@@ -444,6 +739,181 @@ export default function App() {
               </div>
 
               <Button onClick={handleGenerate} className="w-full">
+                {generated ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Generated!
+                  </>
+                ) : (
+                  "Generate XML"
+                )}
+              </Button>
+              </>)}
+              {xmlType === "AFM Komplettering" && (<>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="complementIdentificationNumber">IdentificationNumber</Label>
+                  <Input
+                    id="complementIdentificationNumber"
+                    value={complementIdentificationNumber}
+                    onChange={(e) => setComplementIdentificationNumber(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="complementSubscriberId">SubscriberId</Label>
+                  <Input
+                    id="complementSubscriberId"
+                    value={complementSubscriberId}
+                    onChange={(e) => setComplementSubscriberId(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="complementTransactionId">TransactionId</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="complementTransactionId"
+                      value={complementTransactionId}
+                      onChange={(e) => setComplementTransactionId(e.target.value)}
+                    />
+                    <Button variant="outline" size="icon" className="shrink-0" onClick={() => setComplementTransactionId((v) => String((parseInt(v) || 0) + 1))}>+</Button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="complementMessageComplementId">MessageComplementId</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="complementMessageComplementId"
+                      value={complementMessageComplementId}
+                      onChange={(e) => setComplementMessageComplementId(e.target.value)}
+                    />
+                    <Button variant="outline" size="icon" className="shrink-0" onClick={() => setComplementMessageComplementId((v) => String((parseInt(v) || 0) + 1))}>+</Button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="complementMessageReferenceId">MessageReferenceId</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="complementMessageReferenceId"
+                      value={complementMessageReferenceId}
+                      onChange={(e) => setComplementMessageReferenceId(e.target.value)}
+                    />
+                    <Button variant="outline" size="icon" className="shrink-0" onClick={() => setComplementMessageReferenceId((v) => String((parseInt(v) || 0) + 1))}>+</Button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="complementMessageComplementRequestId">MessageComplementRequestId</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="complementMessageComplementRequestId"
+                      value={complementMessageComplementRequestId}
+                      onChange={(e) => setComplementMessageComplementRequestId(e.target.value)}
+                    />
+                    <Button variant="outline" size="icon" className="shrink-0" onClick={() => setComplementMessageComplementRequestId((v) => String((parseInt(v) || 0) + 1))}>+</Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="complementMessageComplementText">MessageComplementText</Label>
+                <Input
+                  id="complementMessageComplementText"
+                  value={complementMessageComplementText}
+                  onChange={(e) => setComplementMessageComplementText(e.target.value)}
+                />
+              </div>
+
+              <Separator />
+
+              <DatePicker label="MessageComplementSent" date={complementMessageComplementSent} onSelect={setComplementMessageComplementSent} />
+
+              <Button onClick={handleGenerateComplement} className="w-full">
+                {generated ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Generated!
+                  </>
+                ) : (
+                  "Generate XML"
+                )}
+              </Button>
+              </>)}
+              {xmlType === "AFMPOS" && (<>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="posIdentificationNumber">IdentificationNumber</Label>
+                  <Input
+                    id="posIdentificationNumber"
+                    value={posIdentificationNumber}
+                    onChange={(e) => setPosIdentificationNumber(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="posSubscriberId">SubscriberId</Label>
+                  <Input
+                    id="posSubscriberId"
+                    value={posSubscriberId}
+                    onChange={(e) => setPosSubscriberId(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="posTransactionId">TransactionId</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="posTransactionId"
+                      value={posTransactionId}
+                      onChange={(e) => setPosTransactionId(e.target.value)}
+                    />
+                    <Button variant="outline" size="icon" className="shrink-0" onClick={() => setPosTransactionId((v) => String((parseInt(v) || 0) + 1))}>+</Button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="posMessageId">MessageId</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="posMessageId"
+                      value={posMessageId}
+                      onChange={(e) => setPosMessageId(e.target.value)}
+                    />
+                    <Button variant="outline" size="icon" className="shrink-0" onClick={() => setPosMessageId((v) => String((parseInt(v) || 0) + 1))}>+</Button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="posMessageIdReference">MessageIdReference (optional)</Label>
+                  <Input
+                    id="posMessageIdReference"
+                    value={posMessageIdReference}
+                    onChange={(e) => setPosMessageIdReference(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="posMessageTypeText">MessageTypeText</Label>
+                <Input
+                  id="posMessageTypeText"
+                  value={posMessageTypeText}
+                  onChange={(e) => setPosMessageTypeText(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="posMessageText">MessageText</Label>
+                <Input
+                  id="posMessageText"
+                  value={posMessageText}
+                  onChange={(e) => setPosMessageText(e.target.value)}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-1 gap-4">
+                <DatePicker label="MessageCreated" date={posMessageCreated} onSelect={setPosMessageCreated} />
+                <DatePicker label="MessageSent" date={posMessageSent} onSelect={setPosMessageSent} />
+                <DatePicker label="MessageDate" date={posMessageDate} onSelect={setPosMessageDate} />
+              </div>
+
+              <Button onClick={handleGeneratePos} className="w-full">
                 {generated ? (
                   <>
                     <CheckCircle2 className="h-4 w-4 mr-2" />

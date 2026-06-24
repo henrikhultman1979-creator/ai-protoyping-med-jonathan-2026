@@ -1,5 +1,5 @@
 ## Dev server
-- URL: https://ominous-disco-g4g54gwpwgjjhv7gv-5173.app.github.dev
+- URL: https://jubilant-bassoon-69jr9j7p7jgqh49v-5173.app.github.dev
 - Always show the full forwarded URL when starting the dev server.
 
 ## Reference docs
