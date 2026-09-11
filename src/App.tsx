@@ -155,8 +155,10 @@ function FileAttachment({
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0]
     if (!selected) return
-    if (selected.name.split(".").pop()?.toUpperCase() !== "PDF") {
-      setError("Only PDF files are allowed")
+    const extension = selected.name.split(".").pop()?.toUpperCase()
+    const type = extension === "TXT" ? "TEXT" : extension
+    if (!type || !["PDF", "XML", "XSL", "TEXT"].includes(type)) {
+      setError("Only PDF, XML, XSL and TEXT files are allowed")
       e.target.value = ""
       return
     }
@@ -165,7 +167,7 @@ function FileAttachment({
     reader.onload = () => {
       const result = reader.result as string
       const base64 = result.slice(result.indexOf(",") + 1)
-      onChange({ name: selected.name, type: "PDF", data: base64 })
+      onChange({ name: selected.name, type, data: base64 })
     }
     reader.readAsDataURL(selected)
     e.target.value = ""
@@ -189,7 +191,13 @@ function FileAttachment({
         </Button>
       )}
       {error && <p className="text-sm text-red-500">{error}</p>}
-      <input ref={inputRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={handleFileChange} />
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".pdf,application/pdf,.xml,text/xml,application/xml,.xsl,application/xslt+xml,text/xsl,.txt,text/plain"
+        className="hidden"
+        onChange={handleFileChange}
+      />
     </div>
   )
 }
