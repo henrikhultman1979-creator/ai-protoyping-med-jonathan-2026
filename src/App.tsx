@@ -1,6 +1,6 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { format } from "date-fns"
-import { CalendarIcon, ClipboardCopy, Download, CheckCircle2 } from "lucide-react"
+import { CalendarIcon, ClipboardCopy, Download, CheckCircle2, Paperclip, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -36,6 +36,12 @@ type ComplementGeneratedFields = {
   messageComplementRequestId: string
   messageComplementText: string
   messageComplementSent: string
+}
+
+type AttachedFile = {
+  name: string
+  type: string
+  data: string
 }
 
 type PosGeneratedFields = {
@@ -134,6 +140,60 @@ function DatePicker({
   )
 }
 
+function FileAttachment({
+  label,
+  file,
+  onChange,
+}: {
+  label: string
+  file: AttachedFile | null
+  onChange: (file: AttachedFile | null) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [error, setError] = useState("")
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0]
+    if (!selected) return
+    if (selected.name.split(".").pop()?.toUpperCase() !== "PDF") {
+      setError("Only PDF files are allowed")
+      e.target.value = ""
+      return
+    }
+    setError("")
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      const base64 = result.slice(result.indexOf(",") + 1)
+      onChange({ name: selected.name, type: "PDF", data: base64 })
+    }
+    reader.readAsDataURL(selected)
+    e.target.value = ""
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label>{label}</Label>
+      {file ? (
+        <div className="flex items-center gap-2 text-sm border rounded-md px-3 py-2">
+          <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="truncate flex-1">{file.name}</span>
+          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => onChange(null)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <Button variant="outline" size="sm" className="w-fit" onClick={() => inputRef.current?.click()}>
+          <Paperclip className="h-4 w-4 mr-2" />
+          Attach file
+        </Button>
+      )}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      <input ref={inputRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={handleFileChange} />
+    </div>
+  )
+}
+
 function formatXmlDate(date: Date | undefined): string {
   if (!date) return ""
   return format(date, "yyyy-MM-dd'T'HH:mm:ss.SSS") + "+01:00"
@@ -145,6 +205,18 @@ function messageIdReferenceListXml(messageIdReference: string): string {
                   <int:MessageIdReference>${messageIdReference}</int:MessageIdReference>
                </int:MessageIdReferenceList>`
     : `<int:MessageIdReferenceList/>`
+}
+
+function attachmentListXml(file: AttachedFile | null): string {
+  if (!file) return ""
+  return `
+            <int:AttachmentList>
+               <int:Attachment>
+                  <int:AttachmentName>${file.name}</int:AttachmentName>
+                  <int:AttachmentType>${file.type}</int:AttachmentType>
+                  <int:AttachmentData>${file.data}</int:AttachmentData>
+               </int:Attachment>
+            </int:AttachmentList>`
 }
 
 function staticAfMessageBodyXml(utdragstyp: string): string {
@@ -225,6 +297,7 @@ function generateXml(fields: {
   messageType: string
   messageTypeText: string
   messageText: string
+  attachment: AttachedFile | null
 }): string {
   const {
     identificationNumber,
@@ -238,6 +311,7 @@ function generateXml(fields: {
     messageType,
     messageTypeText,
     messageText,
+    attachment,
   } = fields
 
   return `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:int="http://INT013.DocumentService.Schemas">
@@ -262,7 +336,7 @@ function generateXml(fields: {
                <int:MessageDate>${formatXmlDate(messageDate)}</int:MessageDate>
                <int:MessageText>${messageText}</int:MessageText>
 ${staticAfMessageBodyXml("Aktivitetsrapport")}
-            </int:Body>
+            </int:Body>${attachmentListXml(attachment)}
          </int:AFMessageDocument>
       </int:CreateAFMessageDocumentRequest>
    </soapenv:Body>
@@ -280,6 +354,7 @@ function generatePosXml(fields: {
   messageDate: Date | undefined
   messageTypeText: string
   messageText: string
+  attachment: AttachedFile | null
 }): string {
   const {
     identificationNumber,
@@ -292,6 +367,7 @@ function generatePosXml(fields: {
     messageDate,
     messageTypeText,
     messageText,
+    attachment,
   } = fields
 
   return `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:int="http://INT013.DocumentService.Schemas">
@@ -316,7 +392,7 @@ function generatePosXml(fields: {
                <int:MessageDate>${formatXmlDate(messageDate)}</int:MessageDate>
                <int:MessageText>${messageText}</int:MessageText>
 ${staticAfMessageBodyXml("Handlingsplan")}
-            </int:Body>
+            </int:Body>${attachmentListXml(attachment)}
          </int:AFMessageDocument>
       </int:CreatePositiveAFMessageDocumentRequest>
    </soapenv:Body>
@@ -333,6 +409,7 @@ function generateComplementXml(fields: {
   messageComplementRequestId: string
   messageComplementText: string
   messageComplementSent: Date | undefined
+  attachment: AttachedFile | null
 }): string {
   const {
     identificationNumber,
@@ -344,6 +421,7 @@ function generateComplementXml(fields: {
     messageComplementRequestId,
     messageComplementText,
     messageComplementSent,
+    attachment,
   } = fields
 
   return `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:int="http://INT013.DocumentService.Schemas">
@@ -377,7 +455,7 @@ function generateComplementXml(fields: {
                      <int:Utdragsdatum>2020-02-10T00:00:00.000+01:00</int:Utdragsdatum>
                   </int:Utdrag>
                </int:AFUtdrag>
-            </int:Body>
+            </int:Body>${attachmentListXml(attachment)}
          </int:AFMessageComplementDocument>
       </int:CreateAFMessageComplementDocumentRequest>
    </soapenv:Body>
@@ -397,7 +475,6 @@ export default function App() {
   const [xmlType, setXmlType] = useState<"AFM" | "AFMPOS" | "AFM Komplettering">("AFM")
   const [generatedXml, setGeneratedXml] = useState("")
   const [copied, setCopied] = useState(false)
-  const [messageIdCopied, setMessageIdCopied] = useState(false)
   const [generated, setGenerated] = useState(false)
   const [prevGeneratedFields, setPrevGeneratedFields] = useState<GeneratedFields | null>(null)
   const [prevComplementGeneratedFields, setPrevComplementGeneratedFields] = useState<ComplementGeneratedFields | null>(null)
@@ -406,6 +483,7 @@ export default function App() {
 
   const [messageTypeText, setMessageTypeText] = useState("")
   const [messageText, setMessageText] = useState(DEFAULT_MESSAGE_TEXT)
+  const [attachment, setAttachment] = useState<AttachedFile | null>(null)
 
   const [complementIdentificationNumber, setComplementIdentificationNumber] = useState("")
   const complementDocumentInstance = "ORIGINAL"
@@ -416,6 +494,7 @@ export default function App() {
   const [complementMessageComplementRequestId, setComplementMessageComplementRequestId] = useState("")
   const [complementMessageComplementText, setComplementMessageComplementText] = useState(DEFAULT_MESSAGE_COMPLEMENT_TEXT)
   const [complementMessageComplementSent, setComplementMessageComplementSent] = useState<Date | undefined>(() => { const d = new Date(); d.setHours(14, 0, 0, 0); return d })
+  const [complementAttachment, setComplementAttachment] = useState<AttachedFile | null>(null)
 
   const [posIdentificationNumber, setPosIdentificationNumber] = useState("")
   const [posSubscriberId, setPosSubscriberId] = useState("")
@@ -427,6 +506,7 @@ export default function App() {
   const [posMessageDate, setPosMessageDate] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() - 14); d.setHours(14, 0, 0, 0); return d })
   const [posMessageTypeText, setPosMessageTypeText] = useState(DEFAULT_POS_MESSAGE_TYPE_TEXT)
   const [posMessageText, setPosMessageText] = useState(DEFAULT_POS_MESSAGE_TEXT)
+  const [posAttachment, setPosAttachment] = useState<AttachedFile | null>(null)
 
   function handleMessageTypeChange(value: string) {
     setMessageType(value)
@@ -459,21 +539,25 @@ export default function App() {
       messageType,
       messageTypeText,
       messageText,
+      attachment,
     })
     setGeneratedXml(xml)
     setGenerated(true)
     setTimeout(() => setGenerated(false), 2000)
+    const changed = new Set<string>()
     if (prevGeneratedFields) {
-      const changed = new Set<string>()
       for (const key of Object.keys(currentFields) as (keyof GeneratedFields)[]) {
         if (currentFields[key] !== prevGeneratedFields[key] && currentFields[key] !== '') {
           changed.add(currentFields[key])
         }
       }
-      setHighlightedValues(changed)
-    } else {
-      setHighlightedValues(new Set())
     }
+    if (attachment) {
+      changed.add(attachment.name)
+      changed.add(attachment.type)
+      changed.add(attachment.data)
+    }
+    setHighlightedValues(changed)
     setPrevGeneratedFields(currentFields)
   }
 
@@ -499,21 +583,25 @@ export default function App() {
       messageComplementRequestId: complementMessageComplementRequestId,
       messageComplementText: complementMessageComplementText,
       messageComplementSent: complementMessageComplementSent,
+      attachment: complementAttachment,
     })
     setGeneratedXml(xml)
     setGenerated(true)
     setTimeout(() => setGenerated(false), 2000)
+    const changed = new Set<string>()
     if (prevComplementGeneratedFields) {
-      const changed = new Set<string>()
       for (const key of Object.keys(currentFields) as (keyof ComplementGeneratedFields)[]) {
         if (currentFields[key] !== prevComplementGeneratedFields[key] && currentFields[key] !== '') {
           changed.add(currentFields[key])
         }
       }
-      setHighlightedValues(changed)
-    } else {
-      setHighlightedValues(new Set())
     }
+    if (complementAttachment) {
+      changed.add(complementAttachment.name)
+      changed.add(complementAttachment.type)
+      changed.add(complementAttachment.data)
+    }
+    setHighlightedValues(changed)
     setPrevComplementGeneratedFields(currentFields)
   }
 
@@ -541,21 +629,25 @@ export default function App() {
       messageDate: posMessageDate,
       messageTypeText: posMessageTypeText,
       messageText: posMessageText,
+      attachment: posAttachment,
     })
     setGeneratedXml(xml)
     setGenerated(true)
     setTimeout(() => setGenerated(false), 2000)
+    const changed = new Set<string>()
     if (prevPosGeneratedFields) {
-      const changed = new Set<string>()
       for (const key of Object.keys(currentFields) as (keyof PosGeneratedFields)[]) {
         if (currentFields[key] !== prevPosGeneratedFields[key] && currentFields[key] !== '') {
           changed.add(currentFields[key])
         }
       }
-      setHighlightedValues(changed)
-    } else {
-      setHighlightedValues(new Set())
     }
+    if (posAttachment) {
+      changed.add(posAttachment.name)
+      changed.add(posAttachment.type)
+      changed.add(posAttachment.data)
+    }
+    setHighlightedValues(changed)
     setPrevPosGeneratedFields(currentFields)
   }
 
@@ -580,12 +672,6 @@ export default function App() {
     navigator.clipboard.writeText(generatedXml)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }
-
-  function handleCopyMessageId() {
-    navigator.clipboard.writeText(messageId)
-    setMessageIdCopied(true)
-    setTimeout(() => setMessageIdCopied(false), 2000)
   }
 
   function handleDownload() {
@@ -691,9 +777,6 @@ export default function App() {
                       onChange={(e) => setMessageId(e.target.value)}
                     />
                     <Button variant="outline" size="icon" className="shrink-0" onClick={() => setMessageId((v) => String((parseInt(v) || 0) + 1))}>+</Button>
-                    <Button variant="outline" size="icon" className="shrink-0" onClick={handleCopyMessageId}>
-                      {messageIdCopied ? <CheckCircle2 className="h-4 w-4" /> : <ClipboardCopy className="h-4 w-4" />}
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -737,6 +820,8 @@ export default function App() {
                 <DatePicker label="MessageSent" date={messageSent} onSelect={setMessageSent} />
                 <DatePicker label="MessageDate" date={messageDate} onSelect={setMessageDate} />
               </div>
+
+              <FileAttachment label="Attachment (optional)" file={attachment} onChange={setAttachment} />
 
               <Button onClick={handleGenerate} className="w-full">
                 {generated ? (
@@ -826,6 +911,8 @@ export default function App() {
 
               <DatePicker label="MessageComplementSent" date={complementMessageComplementSent} onSelect={setComplementMessageComplementSent} />
 
+              <FileAttachment label="Attachment (optional)" file={complementAttachment} onChange={setComplementAttachment} />
+
               <Button onClick={handleGenerateComplement} className="w-full">
                 {generated ? (
                   <>
@@ -912,6 +999,8 @@ export default function App() {
                 <DatePicker label="MessageSent" date={posMessageSent} onSelect={setPosMessageSent} />
                 <DatePicker label="MessageDate" date={posMessageDate} onSelect={setPosMessageDate} />
               </div>
+
+              <FileAttachment label="Attachment (optional)" file={posAttachment} onChange={setPosAttachment} />
 
               <Button onClick={handleGeneratePos} className="w-full">
                 {generated ? (
